@@ -29,9 +29,10 @@ namespace PdfiumViewer
 
         public static void FPDF_InitEmbeddedLibraries()
         {
+            string resPath = Path.Combine(Path.GetDirectoryName(typeof(NativeMethods).Assembly.Location), IntPtr.Size == 4 ? "x86" : "x64", "res");
             lock (LockString)
             {
-                Imports.FPDF_InitEmbeddedLibraries();
+                Imports.FPDF_InitEmbeddedLibraries(resPath);
             }
         }
 
@@ -83,11 +84,11 @@ namespace PdfiumViewer
             }
         }
 
-        public static IntPtr FPDFDOC_InitFormFillEnvironment(IntPtr document, FPDF_FORMFILLINFO formInfo)
+        public static IntPtr FPDFDOC_InitFormFillEnvironmentEx(IntPtr document, IntPtr formInfo, IntPtr jsPlatform)
         {
             lock (LockString)
             {
-                return Imports.FPDFDOC_InitFormFillEnvironment(document, formInfo);
+                return Imports.FPDFDOC_InitFormFillEnvironmentEx(document, formInfo, jsPlatform);
             }
         }
 
@@ -160,6 +161,44 @@ namespace PdfiumViewer
             lock (LockString)
             {
                 Imports.FORM_OnAfterLoadPage(page, _form);
+            }
+        }
+
+        public static bool FORM_OnLButtonDown(IntPtr form, IntPtr page, int modifier, double page_x, double page_y)
+        {
+            lock (LockString)
+            {
+                return Imports.FORM_OnLButtonDown(form, page, modifier, page_x, page_y);
+            }
+        }
+
+        public static bool FORM_OnLButtonUp(IntPtr form, IntPtr page, int modifier, double page_x, double page_y)
+        {
+            lock (LockString)
+            {
+                return Imports.FORM_OnLButtonUp(form, page, modifier, page_x, page_y);
+            }
+        }
+
+        public static bool FORM_OnKeyDown(IntPtr form, IntPtr page, Keys keyCode, KeyboardModifiers modifier)
+        {
+            lock (LockString)
+            {
+                char character = KeyboardHelper.CodeToCharacter((int)keyCode);
+                if (character == char.MinValue)
+                {
+                    return Imports.FORM_OnKeyDown(form, page, (int)keyCode, (int)modifier);
+                }
+                Imports.FORM_OnKeyDown(form, page, (int)keyCode, (int)modifier);
+                return Imports.FORM_OnChar(form, page, character, (int)modifier);
+            }
+        }
+
+        public static int FPDFPage_HasFormFieldAtPoint(IntPtr _form, IntPtr page, double page_x, double page_y)
+        {
+            lock (LockString)
+            {
+                return Imports.FPDFPage_HasFormFieldAtPoint(_form, page, page_x, page_y);
             }
         }
 
@@ -665,7 +704,7 @@ namespace PdfiumViewer
             public static extern void FPDF_InitLibrary();
 
             [DllImport("pdfium.dll")]
-            public static extern void FPDF_InitEmbeddedLibraries();
+            public static extern void FPDF_InitEmbeddedLibraries(string resPath);
 
             [DllImport("pdfium.dll")]
             public static extern void FPDF_DestroyLibrary();
@@ -689,7 +728,7 @@ namespace PdfiumViewer
             public static extern uint FPDF_GetDocPermissions(IntPtr document);
 
             [DllImport("pdfium.dll")]
-            public static extern IntPtr FPDFDOC_InitFormFillEnvironment(IntPtr document, FPDF_FORMFILLINFO formInfo);
+            public static extern IntPtr FPDFDOC_InitFormFillEnvironmentEx(IntPtr document, IntPtr formInfo, IntPtr jsPlatform);
 
             [DllImport("pdfium.dll")]
             public static extern void FPDF_SetFormFieldHighlightColor(IntPtr hHandle, int fieldType, uint color);
@@ -717,6 +756,21 @@ namespace PdfiumViewer
 
             [DllImport("pdfium.dll")]
             public static extern void FORM_OnAfterLoadPage(IntPtr page, IntPtr _form);
+
+            [DllImport("pdfium.dll")]
+            public static extern bool FORM_OnLButtonDown(IntPtr _form, IntPtr page, int modifier, double page_x, double page_y);
+
+            [DllImport("pdfium.dll")]
+            public static extern bool FORM_OnLButtonUp(IntPtr _form, IntPtr page, int modifier, double page_x, double page_y);
+
+            [DllImport("pdfium.dll")]
+            public static extern bool FORM_OnKeyDown(IntPtr _form, IntPtr page, int keyCode, int modifier);
+
+            [DllImport("pdfium.dll")]
+            public static extern bool FORM_OnChar(IntPtr _form, IntPtr page, int keyCode, int modifier);
+
+            [DllImport("pdfium.dll")]
+            public static extern int FPDFPage_HasFormFieldAtPoint(IntPtr page, IntPtr _form, double page_x, double page_y);
 
             [DllImport("pdfium.dll")]
             public static extern void FORM_DoPageAAction(IntPtr page, IntPtr _form, FPDFPAGE_AACTION fPDFPAGE_AACTION);
@@ -893,76 +947,6 @@ namespace PdfiumViewer
             #endregion
         }
 
-        [StructLayout(LayoutKind.Sequential)]
-        public class FPDF_FORMFILLINFO
-        {
-            public int version;
-
-            private IntPtr Release;
-
-            private IntPtr FFI_Invalidate;
-
-            private IntPtr FFI_OutputSelectedRect;
-
-            private IntPtr FFI_SetCursor;
-
-            private IntPtr FFI_SetTimer;
-
-            private IntPtr FFI_KillTimer;
-
-            private IntPtr FFI_GetLocalTime;
-
-            private IntPtr FFI_OnChange;
-
-            private IntPtr FFI_GetPage;
-
-            private IntPtr FFI_GetCurrentPage;
-
-            private IntPtr FFI_GetRotation;
-
-            private IntPtr FFI_ExecuteNamedAction;
-
-            private IntPtr FFI_SetTextFieldFocus;
-
-            private IntPtr FFI_DoURIAction;
-
-            private IntPtr FFI_DoGoToAction;
-
-            private IntPtr m_pJsPlatform;
-
-            // XFA support i.e. version 2
-
-            private IntPtr FFI_DisplayCaret;
-
-            private IntPtr FFI_GetCurrentPageIndex;
-
-            private IntPtr FFI_SetCurrentPage;
-
-            private IntPtr FFI_GotoURL;
-
-            private IntPtr FFI_GetPageViewRect;
-
-            private IntPtr FFI_PageEvent;
-
-            private IntPtr FFI_PopupMenu;
-
-            private IntPtr FFI_OpenFile;
-
-            private IntPtr FFI_EmailTo;
-
-            private IntPtr FFI_UploadTo;
-
-            private IntPtr FFI_GetPlatform;
-
-            private IntPtr FFI_GetLanguage;
-
-            private IntPtr FFI_DownloadFromURL;
-
-            private IntPtr FFI_PostRequestURL;
-
-            private IntPtr FFI_PutRequestURL;
-        }
-
         public enum FPDF_UNSP
         {
             DOC_XFAFORM = 1,
@@ -1065,4 +1049,171 @@ namespace PdfiumViewer
         }
         #endregion
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public class FPDF_FORMFILLINFO
+    {
+        public int version;
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public ReleaseCallback Release;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_InvalidateCallback FFI_Invalidate;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_OutputSelectedRectCallback FFI_OutputSelectedRect;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_SetCursorCallback FFI_SetCursor;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_SetTimerCallback FFI_SetTimer;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_KillTimerCallback FFI_KillTimer;
+
+        public FFI_GetLocalTimeCallback FFI_GetLocalTime;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_OnChangeCallback FFI_OnChange;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_GetPageCallback FFI_GetPage;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_GetCurrentPageCallback FFI_GetCurrentPage;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_GetRotationCallback FFI_GetRotation;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_ExecuteNamedActionCallback FFI_ExecuteNamedAction;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_SetTextFieldFocusCallback FFI_SetTextFieldFocus;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_DoURIActionCallback FFI_DoURIAction;
+
+        [MarshalAs(UnmanagedType.FunctionPtr)]
+        public FFI_DoGoToActionCallback FFI_DoGoToAction;
+
+        public IntPtr m_pJsPlatform;
+
+        public int xfa_disabled = 0;
+
+        public IntPtr FFI_DisplayCaret;
+        public IntPtr FFI_GetCurrentPageIndex;
+        public IntPtr FFI_SetCurrentPage;
+        public IntPtr FFI_GotoURL;
+        public IntPtr FFI_GetPageViewRect;
+        public IntPtr FFI_PageEvent;
+        public IntPtr FFI_PopupMenu;
+        public IntPtr FFI_OpenFile;
+        public IntPtr FFI_EmailTo;
+        public IntPtr FFI_UploadTo;
+        public IntPtr FFI_GetPlatform;
+        public IntPtr FFI_GetLanguage;
+        public IntPtr FFI_DownloadFromURL;
+        public IntPtr FFI_PostRequestURL;
+        public IntPtr FFI_PutRequestURL;
+        public IntPtr FFI_OnFocusChange;
+        public IntPtr FFI_DoURIActionWithKeyboardModifier;
+
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void ReleaseCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_InvalidateCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, IntPtr page, 
+        [MarshalAs(UnmanagedType.R8)] double left, 
+        [MarshalAs(UnmanagedType.R8)] double top, 
+        [MarshalAs(UnmanagedType.R8)] double right, 
+        [MarshalAs(UnmanagedType.R8)] double bottom);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_OutputSelectedRectCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, IntPtr page, 
+        [MarshalAs(12)] double left, 
+        [MarshalAs(12)] double top, 
+        [MarshalAs(12)] double right, 
+        [MarshalAs(12)] double bottom);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_SetCursorCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, CursorTypes nCursorType);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate int FFI_SetTimerCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, int uElapse, TimerCallback lptimerFunc);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void TimerCallback(int idEvent);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_KillTimerCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, int nTimerId);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate FPDF_SYSTEMTIME FFI_GetLocalTimeCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_OnChangeCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr FFI_GetPageCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, IntPtr document, int nPageIndex);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate IntPtr FFI_GetCurrentPageCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, IntPtr document);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate PageRotation FFI_GetRotationCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, IntPtr page);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_ExecuteNamedActionCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, [MarshalAs(UnmanagedType.LPStr)] string namedAction);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_SetTextFieldFocusCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, [MarshalAs(UnmanagedType.LPWStr)] string value, 
+        [MarshalAs(UnmanagedType.I4)] int valueLen, [MarshalAs(UnmanagedType.Bool)] bool is_focus);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_DoURIActionCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, [MarshalAs(UnmanagedType.LPStr)] string bsURI);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void FFI_DoGoToActionCallback([MarshalAs(UnmanagedType.LPStruct)] FPDF_FORMFILLINFO pThis, int nPageIndex, ZoomModes zoomMode, 
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.R4, SizeParamIndex = 4)] float[] fPosArray, int sizeofArray);
+
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate DialogResults app_alert_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, [MarshalAs(UnmanagedType.LPWStr)] string Msg, 
+        [MarshalAs(UnmanagedType.LPWStr)] string Title, ButtonTypes Type, IconTypes Icon);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void app_beep_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, BeepTypes nType);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate int app_response_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, [MarshalAs(UnmanagedType.LPWStr)] string Question, 
+        [MarshalAs(UnmanagedType.LPWStr)] string Title, [MarshalAs(UnmanagedType.LPWStr)] string Default, [MarshalAs(UnmanagedType.LPWStr)] string cLabel, 
+        [MarshalAs(UnmanagedType.Bool)] bool Password, IntPtr buffer, int buflen);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate int Doc_getFilePath_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, IntPtr filePath, int length);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void Doc_mail_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] mailData, 
+        int length, [MarshalAs(UnmanagedType.Bool)] bool bUI, [MarshalAs(UnmanagedType.LPStr)] string To, [MarshalAs(UnmanagedType.LPStr)] string Subject, 
+        [MarshalAs(UnmanagedType.LPStr)] string Cc, [MarshalAs(UnmanagedType.LPStr)] string Bcc, [MarshalAs(UnmanagedType.LPStr)] string Msg);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void Doc_print_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, [MarshalAs(UnmanagedType.Bool)] bool bUI, int nStart, int nEnd, 
+        [MarshalAs(UnmanagedType.Bool)] bool bSilent, [MarshalAs(UnmanagedType.Bool)] bool bShrinkToFit, [MarshalAs(UnmanagedType.Bool)] bool bPrintAsImage, 
+        [MarshalAs(UnmanagedType.Bool)] bool bReverse, [MarshalAs(UnmanagedType.Bool)] bool bAnnotations);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void Doc_submitForm_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, [MarshalAs(UnmanagedType.LPArray, SizeParamIndex = 2)] byte[] formData, 
+        int length, [MarshalAs(UnmanagedType.LPWStr)] string Url);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate void Doc_gotoPage_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, int nPageNum);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    public delegate int Field_browse_callback([MarshalAs(UnmanagedType.LPStruct)] IPDF_JSPLATFORM pThis, IntPtr filePath, int length);
+
 }

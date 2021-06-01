@@ -161,6 +161,12 @@ namespace PdfiumViewer
             PageSizes = new ReadOnlyCollection<SizeF>(_pageSizes);
         }
 
+        public event EventHandler<InvalidatePageEventArgs> InvalidatePage
+        {
+            add => _file.InvalidatePage += value;
+            remove => _file.InvalidatePage -= value;
+        }
+
         /// <summary>
         /// Renders a page of the PDF document to the provided graphics instance.
         /// </summary>
@@ -305,7 +311,7 @@ namespace PdfiumViewer
         /// <returns>The rendered image.</returns>
         public Image Render(int page, int width, int height, float dpiX, float dpiY, PdfRotation rotate, PdfRenderFlags flags)
         {
-            return Render(page, width, height, dpiX, dpiY, rotate, flags, false);
+            return Render(page, width, height, dpiX, dpiY, rotate, flags & ~PdfRenderFlags.Annotations, (flags & PdfRenderFlags.Annotations) != 0);
         }
 
         /// <summary>
@@ -402,6 +408,26 @@ namespace PdfiumViewer
                 throw new ArgumentNullException("stream");
 
             _file.Save(stream);
+        }
+
+        public bool MouseDownForForms(double pageX, double pageY)
+        {
+            return _file.MouseDownForForms(pageX, pageY);
+        }
+
+        public bool MouseUpForForms(double pageX, double pageY)
+        {
+            return _file.MouseUpForForms(pageX, pageY);
+        }
+
+        public void OnKeyDown(Keys keyCode, KeyboardModifiers keyboardModifiers)
+        {
+            _file.OnKeyDown(keyCode, keyboardModifiers);
+        }
+
+        public int HasFormFieldAtPoint(double pageX, double pageY)
+        {
+            return _file.HasFormFieldAtPoint(pageX, pageY);
         }
 
         /// <summary>

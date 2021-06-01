@@ -6,6 +6,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace PdfiumViewer
 {
@@ -16,8 +17,10 @@ namespace PdfiumViewer
         private IntPtr _document;
         private IntPtr _form;
         private bool _disposed;
-        private NativeMethods.FPDF_FORMFILLINFO _formCallbacks;
-        private GCHandle _formCallbacksHandle;
+        private IPDF_JSPLATFORM _jsPlatform;
+        private FPDF_FORMFILLINFO _formCallbacks;
+        private IntPtr _formCallbacksHandle;
+        private IntPtr _jsPlatformHandle;
         private readonly int _id;
         private Stream _stream;
 
@@ -33,6 +36,7 @@ namespace PdfiumViewer
 
             _stream = stream;
             _id = StreamManager.Register(stream);
+            SynchronizationContext = SynchronizationContext.Current;
 
             var document = NativeMethods.FPDF_LoadCustomDocument(stream, password, _id);
             if (document == IntPtr.Zero)
@@ -42,6 +46,7 @@ namespace PdfiumViewer
         }
 
         public PdfBookmarkCollection Bookmarks { get; private set; }
+        public SynchronizationContext SynchronizationContext { get; set; }
 
         public bool RenderPDFPageToDC(int pageNumber, IntPtr dc, int dpiX, int dpiY, int boundsOriginX, int boundsOriginY, int boundsWidth, int boundsHeight, NativeMethods.FPDF flags)
         {
@@ -130,6 +135,26 @@ namespace PdfiumViewer
             return result;
         }
 
+        public bool MouseDownForForms(double pageX, double pageY)
+        {
+            return NativeMethods.FORM_OnLButtonDown(_form, _currentPageData.Page, 0, pageX, pageY);
+        }
+
+        public bool MouseUpForForms(double pageX, double pageY)
+        {
+            return NativeMethods.FORM_OnLButtonUp(_form, _currentPageData.Page, 0, pageX, pageY);
+        }
+
+        public bool OnKeyDown(System.Windows.Forms.Keys keyCode, KeyboardModifiers keyboardModifiers)
+        {
+            return NativeMethods.FORM_OnKeyDown(_form, _currentPageData.Page, keyCode, keyboardModifiers);
+        }
+
+        public int HasFormFieldAtPoint(double pageX, double pageY)
+        {
+            return NativeMethods.FPDFPage_HasFormFieldAtPoint(_form, _currentPageData.Page, pageX, pageY);
+        }
+
         public SizeF GetPDFDocInfo(int pageNumber)
         {
             double height;
@@ -150,23 +175,76 @@ namespace PdfiumViewer
 
             NativeMethods.FPDF_GetDocPermissions(_document);
 
-            _formCallbacks = new NativeMethods.FPDF_FORMFILLINFO();
-            _formCallbacksHandle = GCHandle.Alloc(_formCallbacks, GCHandleType.Pinned);
+            _jsPlatform = new IPDF_JSPLATFORM();
+            _jsPlatform.app_alert = new app_alert_callback(this.app_alert);
+            _jsPlatform.app_beep = new app_beep_callback(this.app_beep);
+            _jsPlatform.app_response = new app_response_callback(this.app_response);
+            _jsPlatform.Doc_getFilePath = new Doc_getFilePath_callback(this.Doc_getFilePath);
+            _jsPlatform.Doc_gotoPage = new Doc_gotoPage_callback(this.Doc_gotoPage);
+            _jsPlatform.Doc_mail = new Doc_mail_callback(this.Doc_mail);
+            _jsPlatform.Doc_print = new Doc_print_callback(this.Doc_print);
+            _jsPlatform.Doc_submitForm = new Doc_submitForm_callback(this.Doc_submitForm);
+            _jsPlatform.Field_browse = new Field_browse_callback(this.Field_Browse);
+            _jsPlatform.Version = 1;
+
+            _formCallbacks = new FPDF_FORMFILLINFO();
+            _formCallbacks.Release = new ReleaseCallback(this.ReleaseCallback);
+            _formCallbacks.FFI_Invalidate = new FFI_InvalidateCallback(this.FFI_InvalidateCallback);
+            _formCallbacks.FFI_OutputSelectedRect = new FFI_OutputSelectedRectCallback(this.FFI_OutputSelectedRectCallback);
+            _formCallbacks.FFI_SetCursor = new FFI_SetCursorCallback(this.FFI_SetCursorCallback);
+            _formCallbacks.FFI_SetTimer = new FFI_SetTimerCallback(this.FFI_SetTimerCallback);
+            _formCallbacks.FFI_KillTimer = new FFI_KillTimerCallback(this.FFI_KillTimerCallback);
+            _formCallbacks.FFI_GetLocalTime = new FFI_GetLocalTimeCallback(this.FFI_GetLocalTimeCallback);
+            _formCallbacks.FFI_OnChange = new FFI_OnChangeCallback(this.FFI_OnChangeCallback);
+            _formCallbacks.FFI_GetPage = new FFI_GetPageCallback(this.FFI_GetPageCallback);
+            _formCallbacks.FFI_GetCurrentPage = new FFI_GetCurrentPageCallback(this.FFI_GetCurrentPageCallback);
+            _formCallbacks.FFI_GetRotation = new FFI_GetRotationCallback(this.FFI_GetRotationCallback);
+            _formCallbacks.FFI_ExecuteNamedAction = new FFI_ExecuteNamedActionCallback(this.FFI_ExecuteNamedActionCallback);
+            _formCallbacks.FFI_SetTextFieldFocus = new FFI_SetTextFieldFocusCallback(this.FFI_SetTextFieldFocusCallback);
+            _formCallbacks.FFI_DoURIAction = new FFI_DoURIActionCallback(this.FFI_DoURIActionCallback);
+
+
+
+            // PDF_ENABLE_V8
+            //_formCallbacks.m_pJsPlatform = IntPtr.Zero;
+
+            // PDF_ENABLE_XFA
+            /*_formCallbacks.FFI_EmailTo = IntPtr.Zero;
+            _formCallbacks.FFI_DisplayCaret = Marshal.GetFunctionPointerForDelegate(FFI_DisplayCaretCall);
+            _formCallbacks.FFI_SetCurrentPage = IntPtr.Zero;
+            _formCallbacks.FFI_GetCurrentPageIndex = IntPtr.Zero;
+            _formCallbacks.FFI_GetPageViewRect = IntPtr.Zero;
+            _formCallbacks.FFI_GetPlatform = IntPtr.Zero;
+            _formCallbacks.FFI_PageEvent = IntPtr.Zero;
+            _formCallbacks.FFI_PopupMenu = IntPtr.Zero;
+            _formCallbacks.FFI_PostRequestURL = IntPtr.Zero;
+            _formCallbacks.FFI_PutRequestURL = IntPtr.Zero;
+            _formCallbacks.FFI_UploadTo = IntPtr.Zero;
+            _formCallbacks.FFI_DownloadFromURL = IntPtr.Zero;
+            _formCallbacks.FFI_OpenFile = IntPtr.Zero;
+            _formCallbacks.FFI_GotoURL = IntPtr.Zero;
+            _formCallbacks.FFI_GetLanguage = IntPtr.Zero;*/
+
+
+            //_formCallbacksHandle = GCHandle.Alloc(_formCallbacks, GCHandleType.Pinned);
+
+            _formCallbacks.version = 2;
+            int cb = Marshal.SizeOf<FPDF_FORMFILLINFO>();
+            _formCallbacksHandle = Marshal.AllocHGlobal(cb);
+            Marshal.StructureToPtr<FPDF_FORMFILLINFO>(_formCallbacks, _formCallbacksHandle, false);
+
+            cb = Marshal.SizeOf<IPDF_JSPLATFORM>();
+            _jsPlatformHandle = Marshal.AllocHGlobal(cb);
+            Marshal.StructureToPtr<IPDF_JSPLATFORM>(_jsPlatform, _jsPlatformHandle, false);
 
             // Depending on whether XFA support is built into the PDFium library, the version
-            // needs to be 1 or 2. We don't really care, so we just try one or the other.
+            // needs to be 1 or 2 or 3. We don't really care, so we just try one or the other.
+            // Version 3 is v8+xfa
 
-            for (int i = 1; i <= 2; i++)
-            {
-                _formCallbacks.version = i;
-
-                _form = NativeMethods.FPDFDOC_InitFormFillEnvironment(_document, _formCallbacks);
-                if (_form != IntPtr.Zero)
-                    break;
-            }
+            _form = NativeMethods.FPDFDOC_InitFormFillEnvironmentEx(_document, _formCallbacksHandle, _jsPlatformHandle);
 
             NativeMethods.FPDF_SetFormFieldHighlightColor(_form, 0, 0xFFE4DD);
-            NativeMethods.FPDF_SetFormFieldHighlightAlpha(_form, 100);
+            NativeMethods.FPDF_SetFormFieldHighlightAlpha(_form, 50);
 
             NativeMethods.FORM_DoDocumentJSAction(_form);
             NativeMethods.FORM_DoDocumentOpenAction(_form);
@@ -698,8 +776,8 @@ namespace PdfiumViewer
                     _document = IntPtr.Zero;
                 }
 
-                if (_formCallbacksHandle.IsAllocated)
-                    _formCallbacksHandle.Free();
+                /*if (_formCallbacksHandle.IsAllocated)
+                    _formCallbacksHandle.Free();*/
 
                 if (_stream != null)
                 {
@@ -723,44 +801,140 @@ namespace PdfiumViewer
             return _currentPageData;
         }
 
-        private class PageData : IDisposable
+        #region FPDF_FORMFILLINFO callbacks
+
+        private void ReleaseCallback(FPDF_FORMFILLINFO pThis)
         {
-            private readonly IntPtr _form;
-            private bool _disposed;
+        }
 
-            public IntPtr Page { get; private set; }
-
-            public IntPtr TextPage { get; private set; }
-
-            public double Width { get; private set; }
-
-            public double Height { get; private set; }
-
-            public PageData(IntPtr document, IntPtr form, int pageNumber)
+        private void FFI_InvalidateCallback(FPDF_FORMFILLINFO pThis, IntPtr page, double left, double top, double right, double bottom)
+        {
+            FS_RECTF rect = new FS_RECTF(left, top, right, bottom);
+            if (_currentPageData.Page == page)
             {
-                _form = form;
-
-                Page = NativeMethods.FPDF_LoadPage(document, pageNumber);
-                TextPage = NativeMethods.FPDFText_LoadPage(Page);
-                NativeMethods.FORM_OnAfterLoadPage(Page, form);
-                NativeMethods.FORM_DoPageAAction(Page, form, NativeMethods.FPDFPAGE_AACTION.OPEN);
-
-                Width = NativeMethods.FPDF_GetPageWidth(Page);
-                Height = NativeMethods.FPDF_GetPageHeight(Page);
-            }
-
-            public void Dispose()
-            {
-                if (!_disposed)
-                {
-                    NativeMethods.FORM_DoPageAAction(Page, _form, NativeMethods.FPDFPAGE_AACTION.CLOSE);
-                    NativeMethods.FORM_OnBeforeClosePage(Page, _form);
-                    NativeMethods.FPDFText_ClosePage(TextPage);
-                    NativeMethods.FPDF_ClosePage(Page);
-
-                    _disposed = true;
-                }
+                InvalidatePage?.Invoke(this, new InvalidatePageEventArgs(_currentPageData, rect));
             }
         }
+        public event EventHandler<InvalidatePageEventArgs> InvalidatePage;
+
+        private void FFI_OutputSelectedRectCallback(FPDF_FORMFILLINFO pThis, IntPtr page, double left, double top, double right, double bottom)
+        {
+        }
+
+        private void FFI_SetCursorCallback(FPDF_FORMFILLINFO pThis, CursorTypes nCursorType)
+        {
+        }
+
+        private Dictionary<int, TimerEx> _timers = new Dictionary<int, TimerEx>();
+        private static object _syncTimerId = new object();
+        private static int __timerid = 0;
+        private static int _timerid
+        {
+            get
+            {
+                object syncTimerId = PdfFile._syncTimerId;
+                int result;
+                lock (syncTimerId)
+                {
+                    result = ++PdfFile.__timerid;
+                }
+                return result;
+            }
+        }
+
+        private int FFI_SetTimerCallback(FPDF_FORMFILLINFO pThis, int uElapse, TimerCallback lpTimerFunc)
+        {
+            TimerEx timerEx = new TimerEx(this.SynchronizationContext, uElapse, PdfFile._timerid, lpTimerFunc);
+            this._timers.Add(timerEx.TimerId, timerEx);
+            timerEx.Start();
+            return timerEx.TimerId;
+        }
+
+        private void FFI_KillTimerCallback(FPDF_FORMFILLINFO pThis, int nTimerId)
+        {
+            if (_timers.ContainsKey(nTimerId))
+            {
+                _timers[nTimerId].Stop();
+                _timers.Remove(nTimerId);
+            }
+        }
+
+        private FPDF_SYSTEMTIME FFI_GetLocalTimeCallback(FPDF_FORMFILLINFO pThis)
+        {
+            return new FPDF_SYSTEMTIME();
+        }
+
+        private void FFI_OnChangeCallback(FPDF_FORMFILLINFO pThis)
+        {
+        }
+
+        private IntPtr FFI_GetPageCallback(FPDF_FORMFILLINFO pThis, IntPtr document, int nPageIndex)
+        {
+            return IntPtr.Zero;
+        }
+
+        private IntPtr FFI_GetCurrentPageCallback(FPDF_FORMFILLINFO pThis, IntPtr document)
+        {
+            return IntPtr.Zero;
+        }
+
+        private PageRotation FFI_GetRotationCallback(FPDF_FORMFILLINFO pThis, IntPtr page)
+        {
+            return PageRotation.Rotate0;
+        }
+
+        private void FFI_ExecuteNamedActionCallback(FPDF_FORMFILLINFO pThis, string namedAction)
+        {
+        }
+
+        private void FFI_SetTextFieldFocusCallback(FPDF_FORMFILLINFO pThis, string value, int valueLen, bool is_focus)
+        {
+        }
+
+        private void FFI_DoURIActionCallback(FPDF_FORMFILLINFO pThis, string bsURI)
+        {
+        }
+
+        private DialogResults app_alert(IPDF_JSPLATFORM pThis, string Msg, string Title, ButtonTypes Type, IconTypes Icon)
+        {
+            return DialogResults.Ok;
+        }
+
+        private void app_beep(IPDF_JSPLATFORM pThis, BeepTypes nType)
+        {
+        }
+
+        private int app_response(IPDF_JSPLATFORM pThis, string Question, string Title, string Default, string cLabel, bool Password, IntPtr buffer, int buflen)
+        {
+            return 0;
+        }
+
+        private int Doc_getFilePath(IPDF_JSPLATFORM pThis, IntPtr filePath, int length)
+        {
+            return 0;
+        }
+
+        private void Doc_gotoPage(IPDF_JSPLATFORM pThis, int nPageNum)
+        {
+        }
+
+        private void Doc_mail(IPDF_JSPLATFORM pThis, byte[] mailData, int length, bool bUI, string To, string Subject, string Cc, string Bcc, string Msg)
+        {
+        }
+
+        private void Doc_print(IPDF_JSPLATFORM pThis, bool bUI, int nStart, int nEnd, bool bSilent, bool bShrinkToFit, bool bPrintAsImage, bool bReverse, bool bAnnotations)
+        {
+        }
+
+        private void Doc_submitForm(IPDF_JSPLATFORM pThis, byte[] formData, int length, string Url)
+        {
+        }
+
+        private int Field_Browse(IPDF_JSPLATFORM pThis, IntPtr filePath, int length)
+        {
+            return 0;
+        }
+
+        #endregion
     }
 }

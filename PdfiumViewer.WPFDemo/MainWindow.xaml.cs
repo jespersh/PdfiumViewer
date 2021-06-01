@@ -36,7 +36,7 @@ namespace PdfiumViewer.WPFDemo
 
             try
             {
-                for (int i = 1; i < pdfDoc.PageCount; i++)
+                for (int i = 0; i < pdfDoc.PageCount; i++)
                 {
                     imageMemDC.Source =
                         await
@@ -51,7 +51,7 @@ namespace PdfiumViewer.WPFDemo
                             ), tokenSource.Token);
 
                     labelMemDC.Content = String.Format("Renderd Pages: {0}, Memory: {1} MB, Time: {2:0.0} sec",
-                        i,
+                        i + 1,
                         currentProcess.PrivateMemorySize64 / (1024 * 1024),
                         sw.Elapsed.TotalSeconds);
 

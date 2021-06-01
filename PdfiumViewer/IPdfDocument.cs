@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
 using System.Text;
+using System.Windows.Forms;
 
 namespace PdfiumViewer
 {
@@ -26,6 +27,8 @@ namespace PdfiumViewer
         /// Size of each page in the PDF document.
         /// </summary>
         IList<SizeF> PageSizes { get; }
+
+        event EventHandler<InvalidatePageEventArgs> InvalidatePage;
 
         /// <summary>
         /// Renders a page of the PDF document to the provided graphics instance.
@@ -298,5 +301,9 @@ namespace PdfiumViewer
         /// <param name="page">The page to get the rectangles from</param>
         /// <returns>The rectangular areas occupied by a segment of text</returns>
         List<PdfRectangle> GetTextRectangles(int page, int startIndex, int count);
+        bool MouseDownForForms(double pageX, double pageY);
+        int HasFormFieldAtPoint(double pageX, double pageY);
+        bool MouseUpForForms(double pageX, double pageY);
+        void OnKeyDown(Keys keyCode, KeyboardModifiers keyboardModifiers);
     }
 }

@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Drawing.Printing;
 using System.IO;
 using System.Text;
+using System.Windows.Forms;
 
 namespace PdfiumViewer.Demo
 {
@@ -33,6 +34,8 @@ namespace PdfiumViewer.Demo
         private readonly int _endPage;
         private PdfBookmarkCollection _bookmarks;
         private IList<SizeF> _sizes;
+
+        public event EventHandler<InvalidatePageEventArgs> InvalidatePage;
 
         private PdfRangeDocument(IPdfDocument document, int startPage, int endPage)
         {
@@ -327,6 +330,25 @@ namespace PdfiumViewer.Demo
         public void Dispose()
         {
             _document.Dispose();
+        }
+
+        public bool MouseDownForForms(double pageX, double pageY)
+        {
+            return false;
+        }
+
+        public int HasFormFieldAtPoint(double pageX, double pageY)
+        {
+            return 0;
+        }
+
+        public bool MouseUpForForms(double pageX, double pageY)
+        {
+            return false;
+        }
+
+        public void OnKeyDown(Keys keyCode, KeyboardModifiers keyboardModifiers)
+        {
         }
     }
 }

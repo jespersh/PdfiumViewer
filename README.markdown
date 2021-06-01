@@ -1,15 +1,15 @@
 # PdfiumViewer
 
-[![License](https://img.shields.io/github/license/Bluegrams/PdfiumViewer.svg)](https://github.com/Bluegrams/PdfiumViewer/blob/master/LICENSE)
-[![NuGet](https://img.shields.io/nuget/v/PdfiumViewer.Updated.svg)](http://nuget.org/packages/PdfiumViewer.Updated)
+[![License](https://img.shields.io/github/license/jespersh/PdfiumViewer.svg)](https://github.com/jespersh/PdfiumViewer/blob/master/LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/PdfiumViewer.Forms.svg)](http://nuget.org/packages/PdfiumViewer.Forms)
 
-## Updated
+## Updated (1-6-2021)
 
-This is an updated fork of the archived **[pvginkel/PdfiumViewer](https://github.com/pvginkel/PdfiumViewer)** project. It is available as `PdfiumViewer.Updated` via nuget and includes the following changes/ updates:
+This is an updated fork of the archived **[Bluegrams/PdfiumViewer](https://github.com/Bluegrams/PdfiumViewer)** project. It is available as `PdfiumViewer.Forms` via nuget and includes the following changes/ updates:
 
-- Merged all relevant [open pull requests](https://github.com/pvginkel/PdfiumViewer/pulls) of the original repo
-- Updated to newer PDFium binaries from https://github.com/bblanchon/pdfium-binaries
-- Added **.NET Core 3.1** as new target
+- Support for form fields (not XFA)
+- Updated to newer PDFium binaries with specific patches for this library from https://github.com/jespersh/pdfium-binaries
+- Added **.NET5.0** as the only target
 
 ## Introduction
 
@@ -26,10 +26,7 @@ PdfiumViewer provides a number of components to work with PDF files:
 
 ## Compatibility
 
-The PdfiumViewer library has been tested with Windows XP and Windows 8, and
-is fully compatible with both. However, the native PDFium libraries with V8
-support do not support Windows XP. See below for instructions on how to
-reference the native libraries.
+The PdfiumViewer library has been tested with Windows 10 and only supports .NET5.0-windows targetting currently.
 
 ## Using the library
 
@@ -80,7 +77,7 @@ libraries are located in the `PdfiumViewer-...` target directories.
 ## Bugs
 
 Bugs should be reported through github at
-[http://github.com/pvginkel/PdfiumViewer/issues](http://github.com/pvginkel/PdfiumViewer/issues).
+[http://github.com/jespersh/PdfiumViewer/issues](http://github.com/jespersh/PdfiumViewer/issues).
 
 ## License
 

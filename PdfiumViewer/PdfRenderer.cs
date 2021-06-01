@@ -518,10 +518,16 @@ namespace PdfiumViewer
                 throw new ArgumentException("Document does not contain any pages", "document");
 
             Document = document;
+            document.InvalidatePage += Document_InvalidatePage;
 
             SetDisplayRectLocation(new Point(0, 0));
 
             ReloadDocument();
+        }
+
+        private void Document_InvalidatePage(object sender, InvalidatePageEventArgs e)
+        {
+            Invalidate();
         }
 
         public void ReloadDocument()
@@ -821,11 +827,16 @@ namespace PdfiumViewer
         private void DrawPageImage(Graphics graphics, int page, Rectangle pageBounds)
         {
             var pageCache = _pageCache[page];
+            var pageCacheOldImage = pageCache.Image;
 
-            if (pageCache.Image == null)
-                pageCache.Image = Document.Render(page, pageBounds.Width, pageBounds.Height, graphics.DpiX, graphics.DpiY, Rotation, PdfRenderFlags.Annotations);
+            pageCache.Image = Document.Render(page, pageBounds.Width, pageBounds.Height, graphics.DpiX, graphics.DpiY, Rotation, PdfRenderFlags.Annotations);
 
             graphics.DrawImageUnscaled(pageCache.Image, pageBounds.Location);
+
+            if (pageCacheOldImage != null)
+            {
+                pageCacheOldImage.Dispose();
+            }
         }
 
         /// <summary>
@@ -909,6 +920,20 @@ namespace PdfiumViewer
             base.OnSetCursor(e);
         }
 
+        protected override void OnPreviewKeyDown(PreviewKeyDownEventArgs e)
+        {
+            if (Document != null)
+            {
+                KeyboardModifiers keyboardModifiers = (KeyboardModifiers)0;
+                if ((e.Modifiers & Keys.Shift) != 0)
+                {
+                    keyboardModifiers |= KeyboardModifiers.ShiftKey;
+                }
+                Document.OnKeyDown(e.KeyCode, keyboardModifiers);
+            }
+            base.OnPreviewKeyDown(e);
+        }
+
         /// <summary>Raises the <see cref="E:System.Windows.Forms.Control.MouseDown" /> event.</summary>
         /// <param name="e">A <see cref="T:System.Windows.Forms.MouseEventArgs" /> that contains the event data. </param>
         protected override void OnMouseDown(MouseEventArgs e)
@@ -916,6 +941,7 @@ namespace PdfiumViewer
             base.OnMouseDown(e);
 
             HandleMouseDownForLinks(e);
+            HandleMouseDownForForms(e);
 
             if (_cursorMode == PdfViewerCursorMode.TextSelection)
             {
@@ -930,6 +956,7 @@ namespace PdfiumViewer
             base.OnMouseUp(e);
 
             HandleMouseUpForLinks(e);
+            HandleMouseUpForForms(e);
 
             if (_cursorMode == PdfViewerCursorMode.TextSelection)
             {
@@ -941,6 +968,19 @@ namespace PdfiumViewer
         {
             base.OnMouseMove(e);
 
+            var point = PointToPdf(e.Location);
+            if (Document != null)
+            {
+                int res = Document.HasFormFieldAtPoint(point.Location.X, point.Location.Y);
+                if (res == 6)
+                {
+                    Cursor.Current = Cursors.IBeam;
+                }
+                else
+                {
+                    Cursor.Current = Cursors.Default;
+                }
+            }
             if (_cursorMode == PdfViewerCursorMode.TextSelection)
             {
                 HandleMouseMoveForTextSelection(e);
@@ -955,6 +995,18 @@ namespace PdfiumViewer
             {
                 HandleMouseDoubleClickForTextSelection(e);
             }
+        }
+
+        private void HandleMouseDownForForms(MouseEventArgs e)
+        {
+            var point = PointToPdf(e.Location);
+            bool res = Document.MouseDownForForms(point.Location.X, point.Location.Y);
+        }
+
+        private void HandleMouseUpForForms(MouseEventArgs e)
+        {
+            var point = PointToPdf(e.Location);
+            bool res = Document.MouseUpForForms(point.Location.X, point.Location.Y);
         }
 
         private void HandleMouseDownForLinks(MouseEventArgs e)

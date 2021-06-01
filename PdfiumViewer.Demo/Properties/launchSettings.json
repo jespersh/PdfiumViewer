@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PdfiumViewer.Demo": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}
