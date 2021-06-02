@@ -1,0 +1,24 @@
+name: .NET
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+      
+    - name: Build
+      run: dotnet pack .\PdfiumViewer\PdfiumViewer.csproj -c Release -o nugetpack /p:Version=3.0.0.${{github.run_number}}
+      
+    - name: nuget push
+      run: dotnet nuget push nugetpack\*.nupkg ${{ secrets.NUGET_UPLOAD_KEY }} -src https://api.nuget.org/v3/index.json 
