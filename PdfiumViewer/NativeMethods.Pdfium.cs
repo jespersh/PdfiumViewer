@@ -29,7 +29,7 @@ namespace PdfiumViewer
 
         public static void FPDF_InitEmbeddedLibraries()
         {
-            string resPath = Path.Combine(Path.GetDirectoryName(typeof(NativeMethods).Assembly.Location), IntPtr.Size == 4 ? "x86" : "x64", "res");
+            string resPath = PdfiumResolver.GetPdfiumResourcesPath() ?? Path.Combine(Path.GetDirectoryName(typeof(NativeMethods).Assembly.Location), IntPtr.Size == 4 ? "x86" : "x64", "res");
             lock (LockString)
             {
                 Imports.FPDF_InitEmbeddedLibraries(resPath);

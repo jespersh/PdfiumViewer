@@ -7,6 +7,7 @@ namespace PdfiumViewer
     public class PdfiumResolver
     {
         public static event PdfiumResolveEventHandler Resolve;
+        public static event PdfiumResolveEventHandler ResolveResources;
 
         private static void OnResolve(PdfiumResolveEventArgs e)
         {
@@ -17,6 +18,18 @@ namespace PdfiumViewer
         {
             var e = new PdfiumResolveEventArgs();
             OnResolve(e);
+            return e.PdfiumFileName;
+        }
+
+        private static void OnResolveResourcesPath(PdfiumResolveEventArgs e)
+        {
+            Resolve?.Invoke(null, e);
+        }
+
+        internal static string GetPdfiumResourcesPath()
+        {
+            var e = new PdfiumResolveEventArgs();
+            OnResolveResourcesPath(e);
             return e.PdfiumFileName;
         }
     }

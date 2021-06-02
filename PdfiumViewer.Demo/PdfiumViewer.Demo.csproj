@@ -9,11 +9,17 @@
     <Product>PdfViewer.Demo</Product>
     <Copyright>Pieter van Ginkel © 2012-2015</Copyright>
     <Version>2.14.0.0</Version>
+    <!-- example at how to place the binaries in a different location -->
+    <PdfiumBinariesOutputFolder>runtimes\</PdfiumBinariesOutputFolder>
+    <PdfiumX64BinaryOutputFolder>win-x64\natives\</PdfiumX64BinaryOutputFolder>
+    <PdfiumX64IcudtlDatOutputFolder>$(PdfiumBinariesOutputFolder)$(PdfiumX64BinaryOutputFolder)</PdfiumX64IcudtlDatOutputFolder>
+    <PdfiumX86BinaryOutputFolder>win-x86\natives\</PdfiumX86BinaryOutputFolder>
+    <PdfiumX86IcudtlDatOutputFolder>$(PdfiumBinariesOutputFolder)$(PdfiumX86BinaryOutputFolder)</PdfiumX86IcudtlDatOutputFolder>
   </PropertyGroup>
-  <!--<ItemGroup>
-    <PackageReference Include="PDFium.x64.v8-xfa" Version="4194.0.0" />
-    <PackageReference Include="PDFium.x86.v8-xfa" Version="4194.0.0" />
-  </ItemGroup>-->
+  <ItemGroup>
+    <PackageReference Include="PDFium.forms.x64.v8-xfa" Version="4522.0.5" />
+    <PackageReference Include="PDFium.forms.x86.v8-xfa" Version="4522.0.5" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Update="ExportBitmapsForm.cs" />
     <Compile Update="ExportBitmapsForm.Designer.cs">
