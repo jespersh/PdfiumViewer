@@ -17,8 +17,8 @@
     <PdfiumX86IcudtlDatOutputFolder>$(PdfiumBinariesOutputFolder)$(PdfiumX86BinaryOutputFolder)</PdfiumX86IcudtlDatOutputFolder>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="PDFium.forms.x64.v8-xfa" Version="4522.0.5" />
-    <PackageReference Include="PDFium.forms.x86.v8-xfa" Version="4522.0.5" />
+    <PackageReference Include="PDFium.forms.x64.v8-xfa" Version="4522.0.6" />
+    <PackageReference Include="PDFium.forms.x86.v8-xfa" Version="4522.0.6" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="ExportBitmapsForm.cs" />
