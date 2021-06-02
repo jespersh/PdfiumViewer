@@ -21,4 +21,4 @@ jobs:
       run: dotnet pack .\PdfiumViewer\PdfiumViewer.csproj -c Release -o nugetpack /p:Version=3.0.0.${{github.run_number}}
       
     - name: nuget push
-      run: dotnet nuget push nugetpack\*.nupkg ${{ secrets.NUGET_UPLOAD_KEY }} -src https://api.nuget.org/v3/index.json 
+      run: dotnet nuget push nugetpack\*.nupkg ${{ secrets.NUGET_UPLOAD_KEY }} -s https://api.nuget.org/v3/index.json 
