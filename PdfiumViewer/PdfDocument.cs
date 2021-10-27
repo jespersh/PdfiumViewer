@@ -410,6 +410,33 @@ namespace PdfiumViewer
             _file.Save(stream);
         }
 
+        /// <summary>
+        /// Save the PDF document to the specified location.
+        /// </summary>
+        /// <param name="path">Path to save the PDF document to.</param>
+        public void SaveWithoutPassword(string path)
+        {
+            if (path == null)
+                throw new ArgumentNullException("path");
+
+            using (var stream = File.Create(path))
+            {
+                SaveWithoutPassword(stream);
+            }
+        }
+
+        /// <summary>
+        /// Save the PDF document to the specified location.
+        /// </summary>
+        /// <param name="stream">Stream to save the PDF document to.</param>
+        public void SaveWithoutPassword(Stream stream)
+        {
+            if (stream == null)
+                throw new ArgumentNullException("stream");
+
+            _file.SaveWithoutPassword(stream);
+        }
+
         public bool MouseDownForForms(double pageX, double pageY)
         {
             return _file.MouseDownForForms(pageX, pageY);

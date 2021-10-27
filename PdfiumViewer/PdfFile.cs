@@ -169,6 +169,11 @@ namespace PdfiumViewer
             NativeMethods.FPDF_SaveAsCopy(_document, stream, NativeMethods.FPDF_SAVE_FLAGS.FPDF_NO_INCREMENTAL);
         }
 
+        public void SaveWithoutPassword(Stream stream)
+        {
+            NativeMethods.FPDF_SaveAsCopy(_document, stream, NativeMethods.FPDF_SAVE_FLAGS.FPDF_NO_INCREMENTAL | NativeMethods.FPDF_SAVE_FLAGS.FPDF_REMOVE_SECURITY);
+        }
+
         protected void LoadDocument(IntPtr document)
         {
             _document = document;
