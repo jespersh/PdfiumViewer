@@ -186,15 +186,16 @@ namespace PdfiumViewer
 
             left += (width - scaledWidth) / 2;
             top += (height - scaledHeight) / 2;
+            float dpiX = _settings.DpiX != -1 ? _settings.DpiX : e.Graphics.DpiX;
+            float dpiY = _settings.DpiY != -1 ? _settings.DpiY : e.Graphics.DpiY;
 
-            Image image = _document.Render(page,
-                AdjustDpi(e.Graphics.DpiX, scaledWidth),
-                AdjustDpi(e.Graphics.DpiY, scaledHeight),
-                e.Graphics.DpiX,
-                e.Graphics.DpiY,
-                PdfRotation.Rotate0, PdfRenderFlags.ForPrinting | PdfRenderFlags.Annotations);
-
-            e.Graphics.DrawImageUnscaled(image, e.PageBounds.Location);
+            using (Image image = _document.Render(page,
+                AdjustDpi(dpiX, scaledWidth),
+                AdjustDpi(dpiY, scaledHeight),
+                dpiX,
+                dpiY,
+                PdfRotation.Rotate0, PdfRenderFlags.ForPrinting | PdfRenderFlags.Annotations))
+                e.Graphics.DrawImageUnscaled(image, e.PageBounds.Location);
         }
 
         private static void Swap(ref double a, ref double b)

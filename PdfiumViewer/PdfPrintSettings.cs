@@ -21,6 +21,16 @@ namespace PdfiumViewer
         public PdfPrintMultiplePages MultiplePages { get; }
 
         /// <summary>
+        /// Allows overriding the printer DpiX for out of memory exceptions
+        /// </summary>
+        public float DpiX { get; set; } = -1;
+
+        /// <summary>
+        /// Allows overriding the printer DpiY for out of memory exceptions
+        /// </summary>
+        public float DpiY { get; set; } = -1;
+
+        /// <summary>
         /// Creates a new instance of the PdfPrintSettings class.
         /// </summary>
         /// <param name="mode">The mode used to print margins.</param>
